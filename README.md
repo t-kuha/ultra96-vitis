@@ -2,10 +2,7 @@
 
 ## Contents of this repo
 
-- Embedded: 
-
-
-
+- Embedded: Linux & standalone application platform creation
 
 ***
 
@@ -15,6 +12,3 @@
 - Get board files from [Xilinx GitHub](https://github.com/Xilinx/XilinxBoardStore.git)
 - Install XRT (Xilinx Runtime)
   - Get Linux package from [Xilinx website](https://www.xilinx.com/products/boards-and-kits/alveo/u200.html#gettingStarted)
-
-
-
