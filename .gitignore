@@ -6,3 +6,8 @@
 sd_card
 
 _*
+
+*.lnk
+
+*.zip
+*.tar.*
