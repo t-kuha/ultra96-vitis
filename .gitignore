@@ -2,6 +2,7 @@
 *.
 *.log
 *.jou
+psu_*
 
 sd_card
 
