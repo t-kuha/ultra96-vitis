@@ -41,7 +41,8 @@ report_utilization -name utilization_1
 report_clocks
 
 # Export .xsa file
-write_hw_platform -fixed -force  -include_bit -file ultra96.xsa
+write_hw_platform -fixed -force -include_bit -file ${PRJ_NAME}.xsa
+validate_hw_platform ${PRJ_NAME}.xsa
 
 # Finish - close project
 close_project
