@@ -1,6 +1,6 @@
-# Embeddesd platform
+# Embedded platform
 
-- Vitis embedded platform
+- Vitis Embedded Platform
 
 ***
 
@@ -58,7 +58,7 @@ $ cp ${PRJ}/images/linux/image.ub boot/
 $ cp ${PRJ}/images/linux/zynqmp_fsbl.elf boot/
 $ cp ${PRJ}/images/linux/pmufw.elf boot/
 $ cp ${PRJ}/images/linux/bl31.elf boot/
-$ cp ${PRJ}/images/linux/u-boot. boot/
+$ cp ${PRJ}/images/linux/u-boot.elf boot/
 ```
 
 ### Generate platform
