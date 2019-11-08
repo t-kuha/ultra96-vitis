@@ -55,7 +55,8 @@ $ petalinux-package -p ${PRJ} --boot --format BIN \
 # Copy the product for platform generation
 $ mkdir boot
 $ cp ${PRJ}/images/linux/image.ub boot/
-$ cp ${PRJ}/images/linux/zynqmp_fsbl.elf boot/
+$ cp ${PRJ}/images/linux/zynqmp_fsbl.elf boot/          # For Linux
+$ cp ${PRJ}/images/linux/zynqmp_fsbl.elf boot/fsbl.elf  # For standalone
 $ cp ${PRJ}/images/linux/pmufw.elf boot/
 $ cp ${PRJ}/images/linux/bl31.elf boot/
 $ cp ${PRJ}/images/linux/u-boot.elf boot/
