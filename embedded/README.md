@@ -9,7 +9,7 @@
 ### Create hardware
 
 ```shell-session
-$ vivado -mode batch -source create_vivado_project.tcl
+$ vivado -mode batch -source create_xsa.tcl
 ```
 
 ### Create BOOT.bin
