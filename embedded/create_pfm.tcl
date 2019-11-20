@@ -14,7 +14,7 @@ platform write
 domain active linux_domain
 
 domain config -bif {src/linux.bif}
-domain config -boot {boot}
+domain config -boot {petalinux/images/linux/}
 platform write
 
 # Domain - standalone (APU)

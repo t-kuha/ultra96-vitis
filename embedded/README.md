@@ -51,15 +51,6 @@ $ petalinux-package -p ${PRJ} --boot --format BIN \
 --pmufw ${PRJ}/images/linux/pmufw.elf \
 --fpga ${PRJ}/project-spec/hw-description/ultra96.bit \
 --atf ${PRJ}/images/linux/bl31.elf
-
-# Copy the product for platform generation
-$ mkdir boot
-$ cp ${PRJ}/images/linux/image.ub boot/
-$ cp ${PRJ}/images/linux/zynqmp_fsbl.elf boot/          # For Linux
-$ cp ${PRJ}/images/linux/zynqmp_fsbl.elf boot/fsbl.elf  # For standalone
-$ cp ${PRJ}/images/linux/pmufw.elf boot/
-$ cp ${PRJ}/images/linux/bl31.elf boot/
-$ cp ${PRJ}/images/linux/u-boot.elf boot/
 ```
 
 ### Generate platform
