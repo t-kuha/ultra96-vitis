@@ -1,6 +1,6 @@
 # Create acceleration platform
 
-platform create -name {u96_accel} -hw {ultra96.xsa} -proc {psu_cortexa53} -os {linux} -no-boot-bsp -out {_pfm}
+platform create -name {u96_accel} -hw {ultra96.xsa} -no-boot-bsp -out {_pfm}
 platform write
 # platform read {/home/pentaxmedical/vitis-workspace/u96_accel/platform.spr}
 platform active {u96_accel}
