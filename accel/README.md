@@ -64,6 +64,12 @@ $ cp ${PRJ}/images/linux/u-boot.elf boot/
 
 ## Generate platform
 
+```shell-session
+$ xsct create_pfm.tcl
+```
+
+- Now, the platform is in __\_pfm/u96_accel/export/__
+
 ***
 
 ## Reference
