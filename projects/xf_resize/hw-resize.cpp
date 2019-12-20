@@ -9,32 +9,19 @@
 
 
 void data2mat(data_t* img_in, xf::cv::Mat<_TYPE, _SRC_ROWS, _SRC_COLS, XF_NPPC1>& _src){
-//	XF_TNAME(_TYPE, _NPC) val;	// Pixel data
-	ap_uint<24> val;
-
 	for(unsigned int r = 0; r < _SRC_ROWS; r++){
 		for(unsigned int c = 0; c < _SRC_COLS; c++){
 #pragma HLS PIPELINE
-			// val =
-			// 		(img_in[(r*_SRC_COLS + c)*3 + 0]) + 		// B
-			// 		(img_in[(r*_SRC_COLS + c)*3 + 1] << 8) +	// G
-			// 		(img_in[(r*_SRC_COLS + c)*3 + 2] << 16);	// G
 			_src.write(r*_SRC_COLS + c, img_in[r*_SRC_COLS + c] & 0xFFFFFF);
 		}
 	}
 }
 
 void mat2data(xf::cv::Mat<_TYPE, _DST_ROWS, _DST_COLS, XF_NPPC1>& _dst, data_t* img_out){
-//	XF_TNAME(_TYPE, _NPC) val;	// Pixel data
-	// ap_uint<24> val;
-
 	for(unsigned int r = 0; r < _DST_ROWS; r++){
 		for(unsigned int c = 0; c < _DST_COLS; c++){
 #pragma HLS PIPELINE
 			img_out[r*_DST_COLS + c] = _dst.read(r*_DST_COLS + c);
-			// img_out[(r*_DST_COLS + c)*3 + 0] = (val      ) & 0xFF;
-			// img_out[(r*_DST_COLS + c)*3 + 1] = (val >>  8) & 0xFF;
-			// img_out[(r*_DST_COLS + c)*3 + 2] = (val >> 16) & 0xFF;
 		}
 	}
 }
