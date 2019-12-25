@@ -2,87 +2,12 @@
 #include <memory>	// std::unique_ptr
 #include <string.h>
 
-#include "hw-resize.h"
+#include "fimg.h"
+#include "hw_resize.h"
 
-#include "FreeImage.h"
-
-
-int load_image(
-		std::string& path,
-		std::unique_ptr<unsigned char[]>& img,
-		unsigned int* width, unsigned int* height, unsigned int* bpp)
-{
-    // Start FreeImage
-    FreeImage_Initialise();
-
-    // Image type
-    FREE_IMAGE_FORMAT fmt = FreeImage_GetFileType(path.c_str());
-    if(fmt == FIF_UNKNOWN){
-    	std::cerr << "[ERROR] FreeImage_GetFileType()..." << std::endl;
-    	return -1;
-    }
-
-    FIBITMAP* dib = FreeImage_Load(fmt, path.c_str(), JPEG_ACCURATE);
-    if(!dib){
-    	std::cerr << "[ERROR] FreeImage_Load(" << path << ")..." << std::endl;
-    	return -1;
-    }
-
-    if(!FreeImage_HasPixels(dib)){
-    	std::cerr << "[ERROR] Image does not have pixels..." << std::endl;
-    	return -1;
-    }
-
-	*width = FreeImage_GetWidth(dib);
-	*height = FreeImage_GetHeight(dib);
-	*bpp = FreeImage_GetBPP(dib);
-	unsigned int sz = (*width)*(*height)*(*bpp/8);
-
-	img = std::unique_ptr<BYTE[]>{ new BYTE[sz] };
-	memcpy(img.get(), FreeImage_GetBits(dib), sz);
-
-#if 0
-	for(unsigned int r = 0; r < 10; r++){
-		for(unsigned int c = 0; c < 10; c++){
-			std::cout << (int)data[ (r*width + c)*3 + 0 ] << " ";
-		}
-		std::cout << std::endl;
-	}
+#ifdef USE_OCL
+#include "xcl2.hpp"
 #endif
-
-
-	FreeImage_Unload(dib);
-
-    FreeImage_DeInitialise();
-
-	return 0;
-}
-
-int save_image(
-	std::string& path,
-	std::unique_ptr<unsigned char[]>& img, 
-	unsigned int width, unsigned int height, unsigned int bpp
-)
-{
-	// Start FreeImage
-    FreeImage_Initialise();
-
-	// Allocate bitmap
-	FIBITMAP* dib = FreeImage_Allocate(width, height, bpp/*, red_mask, green_mask , blue_mask*/);
-
-	memcpy(FreeImage_GetBits(dib), img.get(), width*height*(bpp/8));
-
-	if( !FreeImage_Save(FIF_JPEG, dib, path.c_str(), JPEG_QUALITYGOOD) ){
-		std::cerr << "[ERROR] FreeImage_Save()" << std::endl;
-		return -1;		
-	}
-
-	FreeImage_Unload(dib);
-
-    FreeImage_DeInitialise();
-
-	return 0;
-}
 
 
 int main(int argc, const char * argv[])
@@ -91,52 +16,130 @@ int main(int argc, const char * argv[])
 
 	int ret = 0;
 
+	std::string img_in = "train_00005.jpg";
+	std::string img_out = "out.jpg";
+	std::string xclbin_path = "bc_1.xclbin";
+
+	fimg fii, fio;
+
 	// Load image
-	std::string path = "train_00005.jpg";
-
-	std::unique_ptr<unsigned char[]> img_in;
-	unsigned int width = 0;
-	unsigned int height = 0;
-	unsigned int bpp = 0;
-
-	ret = load_image(path, img_in, &width, &height, &bpp);
+	ret = fii.load(img_in.c_str());
 	if(ret != 0){
 		std::cerr << "[ERROR] load_image()" << std::endl;
 		return -1;
 	}
 
-	// Queue buffer
-	std::unique_ptr<data_t[]> buf_in{ new data_t[width*height] };
-	
-	// Copy to queue buffer
-	for(unsigned int r = 0; r < height; r++){
-		for(unsigned int c = 0; c < width; c++){
-			buf_in[r*width + c] = 
-				(img_in[(r*width + c)*3 + 0]      ) +
-				(img_in[(r*width + c)*3 + 1] <<  8) +
-				(img_in[(r*width + c)*3 + 2] << 16);
-		}
+	unsigned int width = fii.cols();
+	unsigned int height = fii.rows();
+	unsigned int bpp = fii.bpp();
+
+	// Check input image size
+	if( (width != _SRC_COLS) || (height != _SRC_ROWS) ){
+		std::cerr << "[ERROR] load_image()" << std::endl;
+		return -1;
 	}
 
-	// Output buffer
-	std::unique_ptr<data_t[]> buf_out{ new data_t[_DST_ROWS*_DST_COLS] };
-	std::unique_ptr<unsigned char[]> img_out{ new unsigned char[_DST_ROWS*_DST_COLS*3] };
-
-	resize(buf_in.get(), buf_out.get());
-
-	// Copy from queue buffer
-	for(unsigned int r = 0; r < _DST_ROWS; r++){
-		for(unsigned int c = 0; c < _DST_COLS; c++){
-			unsigned int val = buf_out[r*_DST_COLS + c];
-			img_out[(r*_DST_COLS + c)*3 + 0] = (val      ) & 0xFF;
-			img_out[(r*_DST_COLS + c)*3 + 1] = (val >>  8) & 0xFF;
-			img_out[(r*_DST_COLS + c)*3 + 2] = (val >> 16) & 0xFF;
-		}
+	// Allocate output image
+	ret = fio.allocate(_DST_COLS,  _DST_ROWS,  bpp /* = 3*8*/);
+	if(ret != 0){
+		std::cerr << "[ERROR] Failed to allocate output image" << std::endl;
+		return -1;
 	}
+
+	// Size of OpenCL queue buffer
+	const unsigned int align = sizeof(data_t);
+	unsigned int num_in, num_out;
+	if ( (width*height*3) % align == 0 ){
+		num_in = (width*height*3)/align;
+	}else{
+		num_in = (width*height*3)/align + 1;
+	}
+
+	if ( (_DST_ROWS*_DST_COLS*3) % align == 0 ){
+		num_out = (_DST_ROWS*_DST_COLS*3)/align;
+	}else{
+		num_out = (_DST_ROWS*_DST_COLS*3)/align + 1;
+	}
+
+#ifdef USE_OCL
+    cl_int err;
+
+    // Get the device:
+    std::vector<cl::Device> devices = xcl::get_xil_devices();
+    cl::Device device = devices[0];
+
+    // Context, command queue and device name:
+    OCL_CHECK(err, cl::Context context(device, NULL, NULL, NULL, &err));
+    OCL_CHECK(err, cl::CommandQueue q(context, device, CL_QUEUE_PROFILING_ENABLE, &err));
+    OCL_CHECK(err, std::string device_name = device.getInfo<CL_DEVICE_NAME>(&err));
+    std::cout << "INFO: Device found - " << device_name << std::endl;
+
+    // Load xclbin
+    std::cout << "Loading: '" << xclbin_path << std::endl;
+    std::ifstream bin_file(xclbin_path, std::ifstream::binary);
+    bin_file.seekg (0, bin_file.end);
+    unsigned int nb = bin_file.tellg();
+    bin_file.seekg (0, bin_file.beg);
+    std::unique_ptr<char[]> buf { new char[nb] };
+    bin_file.read(buf.get(), nb);
+
+    // Creating Program from Binary File
+    cl::Program::Binaries bins;
+    bins.push_back({buf.get(), nb});
+    devices.resize(1);
+    cl::Program program(context, devices, bins);
+
+    // Create a kernel:
+    OCL_CHECK(err, cl::Kernel krnl(program, "hw_resize", &err));
+
+    // Allocate the buffers:
+    std::vector<cl::Memory> inBufVec, outBufVec;
+    OCL_CHECK(err, cl::Buffer cl_in(context, CL_MEM_READ_ONLY, num_in*sizeof(data_t), NULL, &err));
+    OCL_CHECK(err, cl::Buffer cl_out(context, CL_MEM_WRITE_ONLY, num_out*sizeof(data_t), NULL, &err));
+
+    // Set the kernel arguments
+    OCL_CHECK(err, err = krnl.setArg(0, cl_in));
+    OCL_CHECK(err, err = krnl.setArg(1, cl_out));
+
+    // Copy input vectors to memory
+    OCL_CHECK(err,
+    		q.enqueueWriteBuffer(cl_in, CL_TRUE, 0, width*height*bpp/8, fii.get()));
+
+    cl::Event event_sp;
+
+    // Execute the kernel:
+    OCL_CHECK(err, err = q.enqueueTask(krnl, NULL, &event_sp));
+
+    clWaitForEvents(1, (const cl_event*)&event_sp);
+
+//    event_sp.getProfilingInfo(CL_PROFILING_COMMAND_START, &start);
+//    event_sp.getProfilingInfo(CL_PROFILING_COMMAND_END, &end);
+//    diff_prof = end - start;
+//    std::cout << (diff_prof / 1000000) << "ms" << std::endl;
+
+    // Copying Device result data to Host memory
+    OCL_CHECK(err,
+    		q.enqueueReadBuffer(cl_out, CL_TRUE, 0, _DST_ROWS*_DST_COLS*bpp/8, fio.get()));
+
+    q.finish();
+#else
+
+	// HW function
+	hw_resize((data_t*)fii.get(), (data_t*)fio.get());
+
+#endif
 
 	// Save output image
-	std::string path_out = "out.jpg";
-	save_image(path_out, img_out, _DST_COLS, _DST_ROWS, 24);
+	ret = fio.save(img_out.c_str());
+	if(ret != 0){
+		std::cerr << "[ERROR] Failed to save image" << std::endl;
+		return -1;
+	}
+
+	// FreeImage
+	fii.deinit_api();
+
+	std::cout << "............................................." << std::endl;
 
 	return 0;
 }
