@@ -19,4 +19,7 @@ user
 -m
 4G
 -device
-loader,file=<elf>
+loader,file=<bl31.elf>,cpu-num=0
+-device
+loader,file=<u-boot.elf>
+
