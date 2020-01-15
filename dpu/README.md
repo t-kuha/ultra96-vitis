@@ -13,6 +13,8 @@ $ cp prj_config  Vitis-AI/DPU-TRD/prj/Vitis/config_file/
 $ cp dpu_conf.vh Vitis-AI/DPU-TRD/prj/Vitis/
 ```
 
+- Edit _Vitis-AI/DPU-TRD/prj/Vitis/Makefile_: Add ``--jobs $(shell nproc)`` to ``XOCC_OPTS = ...`` to speedup synthesis.
+
 - Build
 
 ```shell-session
