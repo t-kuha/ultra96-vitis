@@ -20,4 +20,6 @@ $ export SDX_PLATFORM=<path to u96_accel.xpfm>
 
 $ cd Vitis-AI/DPU-TRD/prj/Vitis/
 $ make KERNEL=DPU DEVICE=u96
+# or...
+$ make KERNEL=DPU_SM DEVICE=u96
 ```
