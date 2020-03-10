@@ -15,16 +15,16 @@ void data2mat(data_t* img_in, xf::cv::Mat<_TYPE, _SRC_ROWS, _SRC_COLS, XF_NPPC1>
 		}
 	}
 #else
-	ap_uint<sizeof(data_t)*8>			buf = 0;		// Pixel buffer
-	unsigned int/*ap_uint<3>*/			c_over = 0;	// Num. of elements carried over
+	ap_uint<sizeof(data_t)*8>	buf = 0;					// Pixel buffer
+	unsigned int					c_over = 0;				// Num. of elements carried over
 
-	const unsigned int/*ap_uint<3>*/	in_w = sizeof(data_t);	// Input data width: <int> = 4
-	const unsigned int/*ap_uint<3>*/	out_w = 3;				// Output data width: RGB = 3 [Byte]
+	const unsigned int			in_w = sizeof(data_t);	// Input data width: <int> = 4
+	const unsigned int			out_w = 3;					// Output data width: RGB = 3 [Byte]
 
-	/*unsigned int*/ap_uint<24> idx = 0;
+	ap_uint<24> idx = 0;
 
-	for(/*unsigned int*/ap_uint<12> r = 0; r < _SRC_ROWS; r++){
-		for(/*unsigned int*/ap_uint<12> c = 0; c < _SRC_COLS; c++){
+	for(ap_uint<12> r = 0; r < _SRC_ROWS; r++){
+		for(ap_uint<12> c = 0; c < _SRC_COLS; c++){
 #pragma HLS PIPELINE
 
 			// Sent-out data
@@ -79,15 +79,15 @@ void mat2data(xf::cv::Mat<_TYPE, _DST_ROWS, _DST_COLS, XF_NPPC1>& _dst, data_t* 
 		}
 	}
 #else
-	ap_uint<sizeof(data_t)*8> 			buf = 0;		// Pixel buffer
-	unsigned int/*ap_uint<3>*/ 			c_over = 0;	// Num. of elements carried over
+	ap_uint<sizeof(data_t)*8> 	buf = 0;					// Pixel buffer
+	unsigned int			 		c_over = 0;				// Num. of elements carried over
 
-	const unsigned int/*ap_uint<3>*/	out_w = sizeof(data_t);	// <- 4
-	const unsigned int/*ap_uint<3>*/	in_w = 3;
+	const unsigned int			out_w = sizeof(data_t);	// <- 4
+	const unsigned int			in_w = 3;
 
-	/*unsigned int*/ap_uint<24> idx = 0;
-	for(/*unsigned int*/ap_uint<12> r = 0; r < _DST_ROWS; r++){
-		for(/*unsigned int*/ap_uint<12> c = 0; c < _DST_COLS; c++){
+	ap_uint<24> idx = 0;
+	for(ap_uint<12> r = 0; r < _DST_ROWS; r++){
+		for(ap_uint<12> c = 0; c < _DST_COLS; c++){
 #pragma HLS PIPELINE
 			// Receive data every cycle
 			ap_uint<24> pix = _dst.read(r*_DST_COLS + c);
@@ -152,7 +152,6 @@ void hw_resize(data_t* img_in, data_t* img_out)
 #pragma HLS DATAFLOW
 	data2mat(img_in, _src);
 	xf::cv::resize<XF_INTERPOLATION_BILINEAR, _TYPE, _SRC_ROWS, _SRC_COLS, _DST_ROWS, _DST_COLS, _NPC, _MAX_DOWN_SCALE>(_src, _dst);
-//	_dst = _src;
 	mat2data(_dst, img_out);
 }
 
