@@ -14,9 +14,14 @@ int main(int argc, const char * argv[])
 {
 	std::cout << ".... Vitis Vision Library ...." << std::endl;
 
+	if(argc < 2){
+		std::cerr << "Usage: " << argv[0] << " <input image>" << std::endl;
+		return -1;
+	}
+
 	int ret = 0;
 
-	std::string img_in = "train_00005.jpg";
+	std::string img_in = argv[1];
 	std::string img_out = "out.jpg";
 	std::string xclbin_path = "bc_1.xclbin";
 
